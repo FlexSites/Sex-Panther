@@ -17,6 +17,7 @@
     "hogan.js": "^3.0.2",
     "http-proxy": "^1.10.1",
     "lodash": "^3.6.0",
+    "marked": "^0.3.3",
     "request": "^2.55.0"
   }
 }

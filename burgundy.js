@@ -17,6 +17,7 @@ var options = {
   disableLambda: false
 };
 
+var flexDataPattern = /<!--\[flex\]>(.*?)<!\[flex\]-->/i;
 
 module.exports = function(type){
   return function(req,res,next){
@@ -25,6 +26,24 @@ module.exports = function(type){
       getPartials(req.hostname),
       getData(type, req.params.id, req.hostname)
     ])
+      .then(function(results){
+
+        if(flexDataPattern.test(results[0].content)){
+          var flexData = results[0].content.match(flexDataPattern)[1];
+          flexData = JSON.parse(flexData);
+          return Promise.all(Object.keys(flexData).map(function(prop){
+            return getData(prop, flexData[prop], req.hostname)
+              .then(function(data){
+                _.extend(results[2], data);
+                return data;
+              });
+          }))
+            .then(function(flexData){
+              return results;
+            });
+        }
+        return results;
+      })
       .then(function(results){
         var template = results[1];
         var data = results[2];
@@ -67,7 +86,12 @@ function getPartial(key, path){
 
 function getData(type, id, host){
   if(!type) return Promise.resolve({});
-  return callAPI('/'+type+(id?'/'+id:''), host);
+  return callAPI('/'+type+(id?'/'+id:''), host)
+    .then(function(data){
+      var obj = {};
+      obj[type] = data;
+      return obj;
+    });
 }
 
 function callS3(path){
@@ -90,7 +114,6 @@ function callAPI(path, host){
 }
 
 function request(opts){
-  console.log('REQUESTING', opts.url);
   return new Promise(function(resolve, reject){
     requestCB(opts, function(err, res, body){
       if(err) return reject(err);
