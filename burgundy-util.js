@@ -48,7 +48,7 @@ function getData(type, id, host){
   return callAPI('/'+type+(id?'/'+id:''), host)
     .then(function(data){
       var obj = {};
-      obj[type] = data;
+      obj[type.split('/').pop()] = data;
       return obj;
     });
 }
