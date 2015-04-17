@@ -1,8 +1,5 @@
 var express = require('express');
 var API = require('./burgundy');
-var s3 = require('./s3');
-var request = require('request');
-var httpProxy = require('http-proxy');
 var app = express();
 
 // app.use(require('./middleware/site-injector'));
