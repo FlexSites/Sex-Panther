@@ -3,6 +3,7 @@ var Hogan = require('hogan.js')
   , requestCB = require('request');
 
 var api = 'http://localapi.flexhub.io'
+  , isDynamic = /^\/(events|entertainers|venues|posts)\/*([a-f0-9]{24}\/*)*$/
   , templates = {}
   , options = {
   delimiters: '[[ ]]',
@@ -16,7 +17,9 @@ module.exports = {
 };
 
 function getPage(path, host){
-  return callAPI('/pages?filter[where][url]='+path, host)
+  var apiPath = isDynamic.test(path)?'dynamic-pages':'pages';
+  path = path.replace(/[a-f0-9]{24}/,':id');
+  return callAPI('/'+apiPath+'?filter[where][url]='+path, host)
     .then(function(page){
       if(!page.templateUrl) return page;
       return request({url: page.templateUrl})
@@ -44,11 +47,13 @@ function getTemplate(host){
 }
 
 function getData(type, id, host){
+  var isList = !id;
   if(!type) return Promise.resolve({});
   return callAPI('/'+type+(id?'/'+id:''), host)
     .then(function(data){
-      var obj = {};
-      obj[type.split('/').pop()] = data;
+      var obj = {}, name = type.split('/').pop();
+      if(!isList) name = name.replace(/s$/,'').replace(/ia$/,'ium');
+      obj[name] = data;
       return obj;
     });
 }
