@@ -3,6 +3,8 @@ var Hogan = require('hogan.js')
   , requestCB = require('request');
 
 var api = 'http://localapi.flexhub.io'
+  , bucket = process.env.S3_BUCKET || 'http://localcdn.flexsites.io'
+  , isDynamic = /^\/(events|entertainers|venues|posts|media)\/*([a-f0-9]{24}\/*)*$/
   , templates = {}
   , options = {
   delimiters: '[[ ]]',
@@ -16,10 +18,12 @@ module.exports = {
 };
 
 function getPage(path, host){
-  return callAPI('/pages?filter[where][url]='+path, host)
+  var apiPath = isDynamic.test(path)?'dynamic-pages':'pages';
+  path = path.replace(/[a-f0-9]{24}/,':id');
+  return callAPI('/'+apiPath+'?filter[where][url]='+path, host)
     .then(function(page){
       if(!page.templateUrl) return page;
-      return request({url: page.templateUrl})
+      return request({url: getSiteFile(page.templateUrl, host)})
         .then(function(body){
           page.content = body;
           delete page.templateUrl;
@@ -30,12 +34,9 @@ function getPage(path, host){
 
 function getTemplate(host){
   if(templates[host]) return templates[host];
-  var promise = callAPI('/template', host)
-    .then(function(locations){
-      return request({url: locations.template})
-        .then(function(file){
-          return {layout: Hogan.compile(file, options)};
-        });
+  var promise = request({url: getSiteFile('/index.html', host)})
+    .then(function(file){
+      return {layout: Hogan.compile(file, options)};
     });
   if(process.env.NODE_ENV === 'prod'){
     templates[host] = promise;
@@ -43,12 +44,25 @@ function getTemplate(host){
   return promise;
 }
 
+function getSiteFile(path, host){
+  return bucket + '/' + removePrefix(host) + '/public' + path;
+}
+
+function removePrefix(url){
+  if(/(local|test)/.test(url)){
+    url = /^(?:https?:\/\/)?(?:local|test)\.?(.*)$/.exec(url)[1];
+  }
+  return url;
+}
+
 function getData(type, id, host){
+  var isList = !id;
   if(!type) return Promise.resolve({});
   return callAPI('/'+type+(id?'/'+id:''), host)
     .then(function(data){
-      var obj = {};
-      obj[type.split('/').pop()] = data;
+      var obj = {}, name = type.split('/').pop();
+      if(!isList) name = name.replace(/s$/,'').replace(/ia$/,'ium');
+      obj[name] = data;
       return obj;
     });
 }
@@ -71,6 +85,12 @@ function callAPI(path, host){
 function request(opts){
   return new Promise(function(resolve, reject){
     requestCB(opts, function(err, res, body){
+      if(res.statusCode === 404)return resolve('');
+      if(res.statusCode > 399){
+        err = new Error();
+        err.status = res.statusCode;
+        return reject(err);
+      }
       if(err) return reject(err);
       resolve(body);
     });

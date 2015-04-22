@@ -8,6 +8,7 @@ app.get('/events/:id?', API('events'));
 app.get('/pages/:id?', API('pages'));
 app.get('/sites/:id?', API('sites'));
 app.get('/venues/:id?', API('venues'));
+app.get('/posts/:id?', API('posts'));
 
 app.use(require('./middleware/static-proxy')());
 
