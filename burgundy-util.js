@@ -53,6 +53,7 @@ function getSiteFile(path, host){
 
 function removePrefix(url){
   if(/(local|test)/.test(url)){
+    console.log('remove prefix', url, /^(?:https?:\/\/)?(?:local|test)\.?(.*)$/.exec(url));
     url = /^(?:https?:\/\/)?(?:local|test)\.?(.*)$/.exec(url)[1];
   }
   return url;
