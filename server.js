@@ -14,7 +14,7 @@ app.use(require('./middleware/static-proxy')());
 
 app.get('/*', API());
 
-var server = app.listen(8080, function () {
+var server = app.listen(process.env.PORT || 8080, function () {
 
   var host = server.address().address;
   var port = server.address().port;
