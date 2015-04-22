@@ -2,8 +2,11 @@ var Hogan = require('hogan.js')
   , Promise = Promise || require('bluebird')
   , requestCB = require('request');
 
-var api = 'http://localapi.flexhub.io'
-  , bucket = process.env.S3_BUCKET || 'http://localcdn.flexsites.io'
+var prefix = process.env.NODE_ENV || 'local';
+if(prefix === 'prod') prefix = '';
+
+var api = 'http://'+prefix+'api.flexhub.io'
+  , bucket = process.env.S3_BUCKET || 'http://'+prefix+'cdn.flexsites.io'
   , isDynamic = /^\/(events|entertainers|venues|posts|media)\/*([a-f0-9]{24}\/*)*$/
   , templates = {}
   , options = {
@@ -85,6 +88,7 @@ function callAPI(path, host){
 function request(opts){
   return new Promise(function(resolve, reject){
     requestCB(opts, function(err, res, body){
+      if(err || !res) return reject(err);
       if(res.statusCode === 404)return resolve('');
       if(res.statusCode > 399){
         err = new Error();

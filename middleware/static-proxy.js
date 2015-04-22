@@ -5,7 +5,7 @@ module.exports = function(){
   var isFile = /\.[a-z0-9]{2,4}$/;
   var proxy = httpProxy.createProxyServer({
     changeOrigin: true,
-    target: 'http://localcdn.flexsites.io'
+    target: process.env.S3_BUCKET || 'http://localcdn.flexsites.io'
   });
 
   return function(req,res,next){
