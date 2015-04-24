@@ -96,7 +96,7 @@ function request(opts){
   console.log('request', opts);
   return new Promise(function(resolve, reject){
     requestCB(opts, function(err, res, body){
-      console.log('REQUEST', opts, err,res,body);
+      console.log('REQUEST', opts, err, body);
       if(err || !res) return reject(err);
       if(res.statusCode === 404)return resolve('');
       if(res.statusCode > 399){

@@ -17,7 +17,7 @@ module.exports = function(type){
       util.getData(type, req.params.id, req.hostname)
     ])
       .then(function(results){
-
+        console.log('RESULTS', results.length);
         if(flexDataPattern.test(results[0].content)){
           var flexData = results[0].content.match(flexDataPattern)[1];
           flexData = JSON.parse(flexData);
@@ -35,6 +35,8 @@ module.exports = function(type){
         return results;
       })
       .then(function(results){
+
+        console.log('RESULTS2', results.length);
         var template = results[1];
         var data = results[2];
         var include = includeTemplate.bind(this, results[0]);
