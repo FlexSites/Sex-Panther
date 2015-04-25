@@ -5,8 +5,8 @@ var Hogan = require('hogan.js')
 var prefix = process.env.NODE_ENV || 'local';
 if(prefix === 'prod') prefix = '';
 
-var api = 'http://'+prefix+'api.flexhub.io'
-  , bucket = process.env.S3_BUCKET || 'http://'+prefix+'cdn.flexsites.io'
+var api = process.env.BURGUNDY || 'http://localapi.flexhub.io'
+  , bucket = process.env.S3_BUCKET || 'http://localcdn.flexsites.io'
   , isDynamic = /^\/(events|entertainers|venues|posts|media)\/*([a-f0-9]{24}\/*)*$/
   , templates = {}
   , options = {

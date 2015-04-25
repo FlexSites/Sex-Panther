@@ -24,7 +24,7 @@ module.exports = function(type){
           return Promise.all(Object.keys(flexData).map(function(prop){
             return util.getData(prop, flexData[prop], req.hostname)
               .then(function(data){
-                _.extend(results[2], data);
+                _.extend(results[2], {url: req.url}, data);
                 return data;
               });
           }))
