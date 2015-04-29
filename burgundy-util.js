@@ -84,6 +84,7 @@ function callAPI(path, host){
       origin: 'http://'+host
     }
   }).then(function(body){
+    if(!body) return;
     var val = JSON.parse(body);
     if(Array.isArray(val) && val.length === 1){
       return val[0];
