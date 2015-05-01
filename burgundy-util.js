@@ -1,6 +1,6 @@
 var Hogan = require('hogan.js')
   , Promise = Promise || require('bluebird')
-  , requestCB = require('request');
+  , requestAsync = Promise.promisify(require('request'));
 
 var prefix = process.env.NODE_ENV || 'local';
 if(prefix === 'prod') prefix = '';
@@ -18,16 +18,16 @@ module.exports = {
   getPage: getPage,
   getTemplate: getTemplate,
   getData: getData,
+  getSiteFile: getSiteFile,
 };
 
 function getPage(path, host){
-  console.log('get page', path, host);
   var apiPath = isDynamic.test(path)?'dynamic-pages':'pages';
   path = path.replace(/[a-f0-9]{24}/,':id');
   return callAPI('/'+apiPath+'?filter[where][url]='+path, host)
     .then(function(page){
       if(!page.templateUrl) return page;
-      return request({url: getSiteFile(page.templateUrl, host)})
+      return getSiteFile(page.templateUrl, host)
         .then(function(body){
           page.content = body;
           delete page.templateUrl;
@@ -37,9 +37,8 @@ function getPage(path, host){
 }
 
 function getTemplate(host){
-  console.log('get template', host);
   if(templates[host]) return templates[host];
-  var promise = request({url: getSiteFile('/index.html', host)})
+  var promise = getSiteFile('/index.html', host)
     .then(function(file){
       return {layout: Hogan.compile(file, options)};
     });
@@ -50,21 +49,17 @@ function getTemplate(host){
 }
 
 function getSiteFile(path, host){
-  console.log('get site file', path, host);
-  return bucket + '/' + removePrefix(host) + '/public' + path;
+  return request({url: bucket + '/' + removePrefix(host) + '/public' + path})
 }
 
 function removePrefix(url){
-  console.log('remove prefix', url);
   if(/(local|test)/.test(url)){
-    console.log('remove prefix', url, /^(?:https?:\/\/)?(?:local|test)\.?(.*)$/.exec(url));
     url = /^(?:https?:\/\/)?(?:local|test)\.?(.*)$/.exec(url)[1];
   }
   return url;
 }
 
 function getData(type, id, host){
-  console.log('get data', type, id, host);
   var isList = !id;
   if(!type) return Promise.resolve({});
   return callAPI('/'+type+(id?'/'+id:''), host)
@@ -77,12 +72,11 @@ function getData(type, id, host){
 }
 
 function callAPI(path, host){
-  console.log('call api', path, host);
+  var headers = {};
+  if(host) headers.origin = 'http://'+host;
   return request({
     url: api+path,
-    headers: {
-      origin: 'http://'+host
-    }
+    headers: headers
   }).then(function(body){
     if(!body) return;
     var val = JSON.parse(body);
@@ -94,19 +88,14 @@ function callAPI(path, host){
 }
 
 function request(opts){
-  console.log('request', opts);
-  return new Promise(function(resolve, reject){
-    requestCB(opts, function(err, res, body){
-      console.log('REQUEST', opts, err, body);
-      if(err || !res) return reject(err);
-      if(res.statusCode === 404)return resolve('');
+  return requestAsync(opts)
+    .spread(function(res, body){
+      if(res.statusCode === 404) return '';
       if(res.statusCode > 399){
-        err = new Error();
+        var err = new Error();
         err.status = res.statusCode;
-        return reject(err);
+        throw err;
       }
-      if(err) return reject(err);
-      resolve(body);
+      return body;
     });
-  });
 }
