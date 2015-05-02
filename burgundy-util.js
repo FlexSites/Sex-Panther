@@ -49,14 +49,11 @@ function getTemplate(host){
 }
 
 function getSiteFile(path, host){
-  return request({url: bucket + '/' + removePrefix(host) + '/public' + path})
+  return request({url: bucket + '/' + removePrefix(host) + '/public' + path});
 }
 
 function removePrefix(url){
-  if(/(local|test)/.test(url)){
-    url = /^(?:https?:\/\/)?(?:local|test)\.?(.*)$/.exec(url)[1];
-  }
-  return url;
+  return /^(?:https?:\/\/)?(?:www|local|test)?\.?(.*)$/.exec(url)[1];
 }
 
 function getData(type, id, host){

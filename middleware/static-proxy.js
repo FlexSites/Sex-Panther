@@ -10,19 +10,14 @@ module.exports = function(){
 
   return function(req,res,next){
     if(!isFile.test(req.url)) return next();
-    var host = req.hostname;
-    if(process.env.NODE_ENV !== 'prod'){
-      host = removePrefix(host);
-    }
+
+    var host = removePrefix(req.hostname);
     req.url = '/'+host+'/public'+req.url;
     proxy.web(req,res,{});
     proxy.on('error', next);
   };
 
   function removePrefix(url){
-    if(/^(local|test)/.test(url)){
-      url = /^(?:local|test)\.?(.*)$/.exec(url)[1];
-    }
-    return url;
+    return /^(?:https?:\/\/)?(?:www|local|test)?\.?(.*)$/.exec(url)[1];
   }
 };
