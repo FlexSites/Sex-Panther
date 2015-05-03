@@ -11,6 +11,7 @@ app.get('/venues/:id?', API('venues'));
 app.get('/posts/:id?', API('posts'));
 
 app.use(require('./middleware/static-proxy')());
+app.use(require('./middleware/www-redirect')());
 
 app.get('/*', API());
 
