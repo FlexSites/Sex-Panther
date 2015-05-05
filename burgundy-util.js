@@ -61,7 +61,7 @@ function getData(type, id, host){
   if(!type) return Promise.resolve({});
   return callAPI('/'+type+(id?'/'+id:''), host)
     .then(function(data){
-      var obj = {}, name = type.split('/').pop();
+      var obj = {}, name = type.split('/').pop().split('?')[0];
       if(!isList) name = name.replace(/s$/,'').replace(/ia$/,'ium');
       obj[name] = data;
       return obj;
