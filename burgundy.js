@@ -34,14 +34,17 @@ module.exports = function(type){
         return results;
       })
       .then(function(results){
-        var template = results[1];
-        var data = results[2];
-        var include = includeTemplate.bind(this, results[0]);
-        var content = '[[<layout]]';
+        var page = results[0]
+          , template = results[1]
+          , data = results[2]
+          , include = includeTemplate.bind(this, page)
+          , content = '[[<layout]]';
         content += include('title');
         content += include('description');
         content += include('content');
         content += '[[/layout]]';
+        data.path = page.path;
+        if(!data.path) data.path = 'home';
         res.send(Hogan.compile(content, options).render(data, template));
       })
       .catch(next);

@@ -31,6 +31,7 @@ function getPage(path, host){
         .then(function(body){
           page.content = body;
           delete page.templateUrl;
+          page.path = path.substr(1,path.length-1);
           return page;
         });
     });
