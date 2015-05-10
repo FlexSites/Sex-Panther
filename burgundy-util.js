@@ -17,6 +17,7 @@ var api = process.env.BURGUNDY || 'http://localapi.flexsites.io'
 module.exports = {
   getPage: getPage,
   getTemplate: getTemplate,
+  clearTemplate: clearTemplate,
   getData: getData,
   getSiteFile: getSiteFile,
 };
@@ -35,6 +36,10 @@ function getPage(path, host){
           return page;
         });
     });
+}
+
+function clearTemplate(host){
+  delete templates[host];
 }
 
 function getTemplate(host){
