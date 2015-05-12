@@ -1,5 +1,6 @@
 var Hogan = require('hogan.js')
   , Promise = Promise || require('bluebird')
+  , querystring = require('querystring')
   , requestAsync = Promise.promisify(require('request'));
 
 var prefix = process.env.NODE_ENV || 'local';
@@ -7,6 +8,7 @@ if(prefix === 'prod') prefix = '';
 
 var api = process.env.BURGUNDY || 'http://localapi.flexsites.io'
   , bucket = process.env.S3_BUCKET || 'http://localcdn.flexsites.io'
+  , includeMedia = ['event', 'entertainer', 'venue', 'post', 'page']
   , isDynamic = /^\/(events|entertainers|venues|posts|media)\/*([a-f0-9]{24}\/*)*$/
   , templates = {}
   , options = {
@@ -25,7 +27,10 @@ module.exports = {
 function getPage(path, host){
   var apiPath = isDynamic.test(path)?'dynamic-pages':'pages';
   path = path.replace(/[a-f0-9]{24}/,':id');
-  return callAPI('/'+apiPath+'?filter[include]=media&filter[where][url]='+path, host)
+  return callAPI('/'+apiPath, host, {
+    'filter[include]':'media',
+    'filter[where][url]': path
+  })
     .then(function(page){
       if(!page.templateUrl) return page;
       return getSiteFile(page.templateUrl, host)
@@ -65,7 +70,11 @@ function removePrefix(url){
 function getData(type, id, host){
   var isList = !id;
   if(!type) return Promise.resolve({});
-  return callAPI('/'+type+(id?'/'+id:''), host)
+
+  var filters = {};
+  if(~includeMedia.indexOf(type)) filters['filter[include]'] = 'media';
+
+  return callAPI('/'+type+(id?'/'+id:''), host, filters)
     .then(function(data){
       var obj = {}, name = type.split('/').pop().split('?')[0];
       if(!isList) name = name.replace(/s$/,'').replace(/ia$/,'ium');
@@ -74,8 +83,9 @@ function getData(type, id, host){
     });
 }
 
-function callAPI(path, host){
+function callAPI(path, host, filters){
   var headers = {};
+  if(filters) path += '?' + querystring.stringify(filters);
   if(host) headers.origin = 'http://'+host;
   return request({
     url: api+path,
