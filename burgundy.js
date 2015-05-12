@@ -43,8 +43,7 @@ module.exports = function(type){
         content += include('description');
         content += include('content');
         content += '[[/layout]]';
-        data.path = page.path;
-        if(!data.path) data.path = 'home';
+        data.page = page;
         res.send(Hogan.compile(content, options).render(data, template));
       })
       .catch(next);

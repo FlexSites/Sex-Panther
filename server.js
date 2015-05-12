@@ -20,6 +20,11 @@ app.use(require('./middleware/www-redirect')());
 
 app.get('/*', API());
 
+app.use(function(err, req, res, next){
+  console.error(err);
+  res.send(err);
+});
+
 var server = app.listen(process.env.PORT || 8080, function () {
 
   var host = server.address().address;

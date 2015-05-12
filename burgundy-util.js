@@ -25,7 +25,7 @@ module.exports = {
 function getPage(path, host){
   var apiPath = isDynamic.test(path)?'dynamic-pages':'pages';
   path = path.replace(/[a-f0-9]{24}/,':id');
-  return callAPI('/'+apiPath+'?filter[where][url]='+path, host)
+  return callAPI('/'+apiPath+'?filter[include]=media&filter[where][url]='+path, host)
     .then(function(page){
       if(!page.templateUrl) return page;
       return getSiteFile(page.templateUrl, host)
