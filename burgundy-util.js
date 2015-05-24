@@ -1,6 +1,7 @@
 var Hogan = require('hogan.js')
   , Promise = Promise || require('bluebird')
   , querystring = require('querystring')
+  , marked = require('marked')
   , requestAsync = Promise.promisify(require('request'));
 
 var prefix = process.env.NODE_ENV || 'local';
@@ -35,6 +36,10 @@ function getPage(path, host){
       if(!page.templateUrl) return page;
       return getSiteFile(page.templateUrl, host)
         .then(function(body){
+
+          // Parse Markdown
+          if(page.format === 'MarkDown') body = marked(body);
+
           page.content = body;
           delete page.templateUrl;
           page.path = path.substr(1,path.length-1);
@@ -76,11 +81,27 @@ function getData(type, id, host){
 
   return callAPI('/'+type+(id?'/'+id:''), host, filters)
     .then(function(data){
+
+      if(type === 'posts') {
+        data = parseMarkdown('content', data);
+        if(Array.isArray(data)) data = data.filter(function(post){
+          return post.publishedDate && +new Date(post.publishedDate) < +new Date;
+        });
+      }
+      else if(type === 'entertainers') data = parseMarkdown('description', data);
+
       var obj = {}, name = type.split('/').pop().split('?')[0];
       if(!isList) name = name.replace(/s$/,'').replace(/ia$/,'ium');
       obj[name] = data;
       return obj;
     });
+}
+
+function parseMarkdown(field, data){
+  if(Array.isArray(data)) return data.map(parseMarkdown.bind(this, field));
+  if(!data) return {};
+  data[field] = marked(data[field]);
+  return data;
 }
 
 function callAPI(path, host, filters){
