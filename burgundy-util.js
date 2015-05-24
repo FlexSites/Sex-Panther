@@ -9,7 +9,7 @@ if(prefix === 'prod') prefix = '';
 
 var api = process.env.BURGUNDY || 'http://localapi.flexsites.io'
   , bucket = process.env.S3_BUCKET || 'http://localcdn.flexsites.io'
-  , includeMedia = ['event', 'entertainer', 'venue', 'post', 'page']
+  , includeMedia = ['events', 'entertainers', 'venues', 'posts', 'pages']
   , isDynamic = /^\/(events|entertainers|venues|posts|media)\/*([a-f0-9]{24}\/*)*$/
   , templates = {}
   , options = {
