@@ -1,0 +1,18 @@
+{
+  "events": [
+    "filter[include]=media",
+    "filter[include]=showtimes"
+  ],
+  "entertainers": [
+    "filter[include]=media"
+  ],
+  "venues": [
+    "filter[include]=media"
+  ],
+  "posts": [
+    "filter[include]=media"
+  ],
+  "pages": [
+    "filter[include]=media"
+  ]
+}

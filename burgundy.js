@@ -1,7 +1,8 @@
 var Hogan = require('hogan.js')
   , Promise = Promise || require('bluebird')
   , _ = require('lodash')
-  , util = require('./burgundy-util');
+  , util = require('./burgundy-util')
+  , lambdas = require('./lambdas');
 
 var flexDataPattern = /<!--\[flex\]>(.*?)<!\[flex\]-->/i
   , options = {
@@ -39,6 +40,10 @@ module.exports = function(type){
           , data = results[2]
           , include = includeTemplate.bind(this, page)
           , content = '[[<layout]]';
+
+        Object.keys(lambdas).map(function(key){
+          if(!data[key]) data[key] = lambdas[key];
+        });
         content += include('title');
         content += include('description');
         content += include('content');

@@ -1,7 +1,8 @@
 var Hogan = require('hogan.js')
   , Promise = Promise || require('bluebird')
-  , querystring = require('querystring')
   , marked = require('marked')
+  , glob = require('glob')
+  , path = require('path')
   , requestAsync = Promise.promisify(require('request'));
 
 var prefix = process.env.NODE_ENV || 'local';
@@ -9,13 +10,20 @@ if(prefix === 'prod') prefix = '';
 
 var api = process.env.BURGUNDY || 'http://localapi.flexsites.io'
   , bucket = process.env.S3_BUCKET || 'http://localcdn.flexsites.io'
-  , includeMedia = ['events', 'entertainers', 'venues', 'posts', 'pages']
-  , isDynamic = /^\/(events|entertainers|venues|posts|media)\/*([a-f0-9]{24}\/*)*$/
+  , isDynamic = /^\/(events|entertainers|venues|posts|media)\/*([a-f0-9]{24}\/*)*/
   , templates = {}
+  , filterMap = require('./filters.json')
   , options = {
   delimiters: '[[ ]]',
   disableLambda: false
 };
+
+var formatters = glob.sync(path.join(__dirname, 'formatters/**')).reduce(function(prev, curr){
+  var name = curr.split('/').pop(), idx = name.indexOf('.');
+  if(!~idx) return prev;
+  prev[name.substr(0, idx)] = require(curr);
+  return prev;
+}, {});
 
 module.exports = {
   getPage: getPage,
@@ -23,15 +31,17 @@ module.exports = {
   clearTemplate: clearTemplate,
   getData: getData,
   getSiteFile: getSiteFile,
+  parseMarkdown: parseMarkdown,
 };
 
 function getPage(path, host){
   var apiPath = isDynamic.test(path)?'dynamic-pages':'pages';
-  path = path.replace(/[a-f0-9]{24}/,':id');
-  return callAPI('/'+apiPath, host, {
-    'filter[include]':'media',
-    'filter[where][url]': path
-  })
+
+  path = path.replace(/[a-f0-9]{24}.*/,':id');
+  return callAPI('/'+apiPath, host, [
+    'filter[include]=media',
+    'filter[where][url]=' + path
+  ])
     .then(function(page){
       if(!page.templateUrl) return page;
       return getSiteFile(page.templateUrl, host)
@@ -72,33 +82,29 @@ function removePrefix(url){
   return /^(?:https?:\/\/)?(?:www|local|test)?\.?(.*)$/.exec(url)[1];
 }
 
+function formatter(type, data){
+  var fn = formatters[type];
+  if(!fn) return data;
+  if(Array.isArray(data)) return data.map(fn);
+  return fn(data);
+}
+
 function getData(type, id, host){
   var isList = !id;
   if(!type) return Promise.resolve({});
 
-  var filters = {};
-  if(~includeMedia.indexOf(type)) filters['filter[include]'] = 'media';
+  var filters = filterMap[type] || [];
 
   return callAPI('/'+type+(id?'/'+id:''), host, filters)
     .then(function(data){
-
-      if(type === 'posts') {
-        data = parseMarkdown('content', data);
-        if(Array.isArray(data)) data = data.filter(function(post){
-          return post.publishedDate && +new Date(post.publishedDate) < +new Date;
-        });
-      }
-      else if(type === 'entertainers') data = parseMarkdown('description', data);
-
       var obj = {}, name = type.split('/').pop().split('?')[0];
       if(!isList) name = name.replace(/s$/,'').replace(/ia$/,'ium');
-      obj[name] = data;
+      obj[name] = formatter(type, data);
       return obj;
     });
 }
 
 function parseMarkdown(field, data){
-  if(Array.isArray(data)) return data.map(parseMarkdown.bind(this, field));
   if(!data) return {};
   data[field] = marked(data[field]);
   return data;
@@ -106,7 +112,7 @@ function parseMarkdown(field, data){
 
 function callAPI(path, host, filters){
   var headers = {};
-  if(filters) path += '?' + querystring.stringify(filters);
+  if(filters) path += '?' + filters.join('&');
   if(host) headers.origin = 'http://'+host;
   return request({
     url: api+path,

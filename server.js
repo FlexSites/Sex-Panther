@@ -11,7 +11,7 @@ app.get('/sites/:id?', API('sites'));
 app.get('/venues/:id?', API('venues'));
 app.get('/posts/:id?', API('posts'));
 
-app.get('/sex-panther', function(req,res,next){
+app.get('/sex-panther', function(req,res){
   util.clearTemplate(req.hostname);
   res.send({message: 'Template for site ' + req.hostname + ' cleared successfully'});
 });
@@ -30,6 +30,6 @@ var server = app.listen(process.env.PORT || 8080, function () {
   var host = server.address().address;
   var port = server.address().port;
 
-  console.log('Example app listening at http://%s:%s', host, port);
+  console.info('Example app listening at http://%s:%s', host, port);
 
 });
